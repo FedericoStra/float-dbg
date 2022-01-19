@@ -2,6 +2,12 @@
 name = "float-dbg"
 version = "0.1.0"
 edition = "2021"
+authors = ["Federico Stra <stra.federico@gmail.com>"]
+description = "Debug floating point numbers easily"
+license = "MIT"
+repository = "https://github.com/FedericoStra/float-dbg"
+keywords = ["debug", "floating-point", "numbers", "IEEE-754"]
+categories = ["development-tools::debugging", "mathematics"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
