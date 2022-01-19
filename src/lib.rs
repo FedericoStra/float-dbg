@@ -52,69 +52,44 @@ where
     }
 }
 
-impl FloatDbg<u32, i32> for f32 {
-    const WIDTH: usize = 32;
-    const EXP_WIDTH: usize = 8;
-    const FRACT_WIDTH: usize = 23;
+macro_rules! impl_FloatDbg {
+    ($F:ty, $U:ty, $S:ty; $width:expr, $exp_width:expr, $frac_width:expr) => {
+        impl FloatDbg<$U, $S> for $F {
+            const WIDTH: usize = $width;
+            const EXP_WIDTH: usize = $exp_width;
+            const FRACT_WIDTH: usize = $frac_width;
 
-    const SIGN_MASK: u32 = 1 << (Self::WIDTH - 1);
-    const EXP_MASK: u32 = ((1 << Self::EXP_WIDTH) - 1) << Self::FRACT_WIDTH;
-    const FRACT_MASK: u32 = (1 << Self::FRACT_WIDTH) - 1;
+            const SIGN_MASK: $U = 1 << (Self::WIDTH - 1);
+            const EXP_MASK: $U = ((1 << Self::EXP_WIDTH) - 1) << Self::FRACT_WIDTH;
+            const FRACT_MASK: $U = (1 << Self::FRACT_WIDTH) - 1;
 
-    const EXP_BIAS: i32 = (1 << (Self::EXP_WIDTH - 1)) - 1;
+            const EXP_BIAS: $S = (1 << (Self::EXP_WIDTH - 1)) - 1;
 
-    fn to_bits(self) -> u32 {
-        self.to_bits()
-    }
+            fn to_bits(self) -> $U {
+                self.to_bits()
+            }
 
-    fn biased_exponent(self) -> u32 {
-        (self.to_bits() & Self::EXP_MASK) >> Self::FRACT_WIDTH
-    }
+            fn biased_exponent(self) -> $U {
+                (self.to_bits() & Self::EXP_MASK) >> Self::FRACT_WIDTH
+            }
 
-    fn unbiased_exponent(self) -> i32 {
-        (self.biased_exponent() as i32).wrapping_sub(Self::EXP_BIAS)
-    }
+            fn unbiased_exponent(self) -> $S {
+                (self.biased_exponent() as $S).wrapping_sub(Self::EXP_BIAS)
+            }
 
-    fn fraction(self) -> u32 {
-        self.to_bits() & Self::FRACT_MASK
-    }
+            fn fraction(self) -> $U {
+                self.to_bits() & Self::FRACT_MASK
+            }
 
-    fn significand(self) -> u32 {
-        self.fraction() + (1 << Self::FRACT_WIDTH)
-    }
+            fn significand(self) -> $U {
+                self.fraction() + (1 << Self::FRACT_WIDTH)
+            }
+        }
+    };
 }
 
-impl FloatDbg<u64, i64> for f64 {
-    const WIDTH: usize = 64;
-    const EXP_WIDTH: usize = 11;
-    const FRACT_WIDTH: usize = 52;
-
-    const SIGN_MASK: u64 = 1 << (Self::WIDTH - 1);
-    const EXP_MASK: u64 = ((1 << Self::EXP_WIDTH) - 1) << Self::FRACT_WIDTH;
-    const FRACT_MASK: u64 = (1 << Self::FRACT_WIDTH) - 1;
-
-    const EXP_BIAS: i64 = (1 << (Self::EXP_WIDTH - 1)) - 1;
-
-    fn to_bits(self) -> u64 {
-        self.to_bits()
-    }
-
-    fn biased_exponent(self) -> u64 {
-        (self.to_bits() & Self::EXP_MASK) >> Self::FRACT_WIDTH
-    }
-
-    fn unbiased_exponent(self) -> i64 {
-        (self.biased_exponent() as i64).wrapping_sub(Self::EXP_BIAS)
-    }
-
-    fn fraction(self) -> u64 {
-        self.to_bits() & Self::FRACT_MASK
-    }
-
-    fn significand(self) -> u64 {
-        self.fraction() + (1 << Self::FRACT_WIDTH)
-    }
-}
+impl_FloatDbg!(f32, u32, i32; 32, 8, 23);
+impl_FloatDbg!(f64, u64, i64; 64, 11, 52);
 
 #[cfg(test)]
 mod tests {
