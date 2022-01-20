@@ -104,37 +104,49 @@ where
     /// The exponent bias.
     const EXP_BIAS: Self::Exponent;
 
+    /// True if the sign bit is set, false otherwise.
     #[inline]
     fn sign_bit(self) -> bool {
         !(self.to_bits() & Self::SIGN_MASK).is_zero()
     }
 
+    /// The biased exponent, as it is stored in the bit representation.
     #[inline]
     fn biased_exponent(self) -> Self::BiasedExponent {
         ((self.to_bits() & Self::EXP_MASK) >> Self::SIGNIF_BITS).az()
     }
 
+    /// The true (unbiased) signed exponent.
     #[inline]
     fn exponent(self) -> Self::Exponent {
         self.biased_exponent().az() - Self::EXP_BIAS
     }
 
+    /// The significand without the implicit bit, as it is stored in the bit representation.
+    ///
+    /// Synonym of [`Float::fraction`].
     #[inline]
     fn stored_significand(self) -> Self::Significand {
         (self.to_bits() & Self::SIGNIF_MASK).az()
     }
 
+    /// The true significand, with the implicit bit added.
     #[inline]
     fn significand(self) -> Self::Significand {
         // Fixme
         self.stored_significand() + (Self::Bits::ONE << Self::SIGNIF_BITS).az()
     }
 
+    /// The significand without the implicit bit, as it is stored in the bit representation.
+    ///
+    /// Synonym of [`Float::stored_significand`].
     #[inline]
     fn fraction(self) -> Self::Significand {
         self.stored_significand()
     }
 
+    /// The triple of stored components:
+    /// sign bit, biased exponent, significand without implicit bit.
     #[inline]
     fn raw_components(self) -> (bool, Self::BiasedExponent, Self::Significand) {
         (
@@ -144,11 +156,28 @@ where
         )
     }
 
+    /// The triple of true components:
+    /// sign bit, exponent, significand with implicit bit.
     #[inline]
     fn components(self) -> (bool, Self::Exponent, Self::Significand) {
         (self.sign_bit(), self.exponent(), self.significand())
     }
 
+    /// Nicely prints the components of a floating point number.
+    ///
+    /// ```
+    /// # use float_dbg::Float;
+    /// 0.032_f32.explain();
+    /// ```
+    ///
+    /// ```text
+    /// value = 0.032
+    /// bits: 00111101000000110001001001101111
+    ///       ±^^^^^^^^_______________________
+    /// sign: +
+    /// exponent = 122 - 127 = -5
+    /// significand = 2^23 + 201327 = 8589935
+    /// ```
     fn explain(self)
     where
         Self: fmt::Debug,
