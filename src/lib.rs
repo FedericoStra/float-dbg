@@ -212,9 +212,17 @@ impl_Float!(f64, u16, i16, u64; 11, 52);
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
+    fn f32_components() {
+        let x = 0.032_f32;
+        assert_eq!(x.components(), (false, -5, 8589935));
+    }
+
+    #[test]
+    fn f64_components() {
+        let x = 0.032_f64;
+        assert_eq!(x.components(), (false, -5, 4611686018427388));
     }
 }
