@@ -71,7 +71,7 @@ macro_rules! impl_AsBits {
 impl_AsBits!(f32, u32);
 impl_AsBits!(f64, u64);
 
-/// Types that are a floating point number.
+/// Types that represent a floating point number.
 pub trait Float: Copy + PartialEq + PartialOrd + AsBits
 where
     Self::Bits: az::Cast<Self::BiasedExponent>,
@@ -87,7 +87,7 @@ where
     /// Type for the significand, both with and without implicit bit.
     type Significand;
 
-    /// The number of bits.
+    /// The number of bits (defaults to [`<Self as AsBits>::Bits::BITS`](Bits::BITS)).
     const BITS: NBits = Self::Bits::BITS as NBits;
     /// The number of bits of the exponent.
     const EXP_BITS: NBits;
