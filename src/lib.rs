@@ -1,95 +1,178 @@
-use std::fmt::{Binary, Debug, Display};
+use std::fmt;
 
-pub trait FloatDbg<U, S>: Copy + Sized + Debug
+type NBits = u16;
+
+pub trait Bits: Copy + Eq + PartialEq
 where
-    U: Default + Binary + Display + PartialEq + std::ops::BitAnd<Output = U>,
-    S: Display,
+    Self: fmt::Binary,
+    Self: std::ops::Shl<NBits, Output = Self>,
+    Self: std::ops::Shr<NBits, Output = Self>,
+    Self: std::ops::BitAnd<Output = Self>,
 {
-    const WIDTH: usize;
-    const EXP_WIDTH: usize;
-    const FRACT_WIDTH: usize;
+    /// The number of bits.
+    const BITS: NBits;
 
-    const SIGN_MASK: U;
-    const EXP_MASK: U;
-    const FRACT_MASK: U;
+    /// The value `0`.
+    const ZERO: Self;
 
-    const EXP_BIAS: S;
+    // /// The value `1`.
+    // const ONE: Self;
 
-    fn to_bits(self) -> U;
+    /// Test if the value is zero.
+    #[inline]
+    fn is_zero(self) -> bool {
+        self == Self::ZERO
+    }
+}
+
+macro_rules! impl_Bits {
+    ($($T:ty),*) => {$(
+        impl Bits for $T {
+            const BITS: NBits = <$T>::BITS as NBits;
+            const ZERO: Self = 0;
+            // const ONE:Self=1;
+        }
+    )*};
+}
+
+impl_Bits!(/*u8, u16,*/ u32, u64 /*, u128*/);
+
+pub trait Float: Copy + PartialEq + PartialOrd {
+    /// Type for the bit representation of `Self`.
+    type Bits: Bits;
+    /// Type for the the biased exponent.
+    type BiasedExponent;
+    /// Type for the true (unbiased) signed exponent.
+    type Exponent;
+    /// Type for the significand, both with and without implicit bit.
+    type Significand;
+
+    /// The number of bits.
+    const BITS: NBits;
+    /// The number of bits of the exponent.
+    const EXP_BITS: NBits;
+    /// The number of bits of the stored significand (not counting the implicit bit).
+    const SIGNIF_BITS: NBits;
+
+    /// The mask for the sign bit.
+    const SIGN_MASK: Self::Bits;
+    /// The mask for the biased exponent bits.
+    const EXP_MASK: Self::Bits;
+    /// The mask for the stored significand bits (no implicit bit).
+    const SIGNIF_MASK: Self::Bits;
+
+    /// The exponent bias.
+    const EXP_BIAS: Self::Exponent;
+
+    /// Convert to the underlying bits representation.
+    fn to_bits(self) -> Self::Bits;
+    /// Convert from the underlying bits representation.
+    fn from_bits(b: Self::Bits) -> Self;
+
+    #[inline]
     fn sign_bit(self) -> bool {
-        self.to_bits() & Self::SIGN_MASK != U::default()
+        !(self.to_bits() & Self::SIGN_MASK).is_zero()
     }
 
-    fn biased_exponent(self) -> U;
-    fn unbiased_exponent(self) -> S;
+    fn biased_exponent(self) -> Self::BiasedExponent;
+    fn exponent(self) -> Self::Exponent;
 
-    fn fraction(self) -> U;
-    fn significand(self) -> U;
+    fn stored_significand(self) -> Self::Significand;
+    fn significand(self) -> Self::Significand;
+    fn fraction(self) -> Self::Significand {
+        self.stored_significand()
+    }
 
-    fn explain(self) {
+    fn explain(self)
+    where
+        Self: fmt::Debug,
+        Self::BiasedExponent: fmt::Debug,
+        Self::Exponent: fmt::Debug,
+        Self::Significand: fmt::Debug,
+    {
         println!("value = {:?}", self);
-        println!("bits: {:0width$b}", self.to_bits(), width = Self::WIDTH);
+        println!(
+            "bits: {:0width$b}",
+            self.to_bits(),
+            width = Self::Bits::BITS as usize
+        );
         println!(
             "      ±{:^<e$}{:_<f$}",
             "",
             "",
-            e = Self::EXP_WIDTH,
-            f = Self::FRACT_WIDTH
+            e = Self::EXP_BITS as usize,
+            f = Self::SIGNIF_BITS as usize
         );
         println!("sign: {}", if self.sign_bit() { "-" } else { "+" });
         println!(
-            "exponent = {} - {} = {}",
+            "exponent = {:?} - {:?} = {:?}",
             self.biased_exponent(),
             Self::EXP_BIAS,
-            self.unbiased_exponent()
+            self.exponent()
         );
         println!(
-            "significand = 2^{} + {} = {}",
-            Self::FRACT_WIDTH,
-            self.fraction(),
+            "significand = 2^{:?} + {:?} = {:?}",
+            Self::SIGNIF_BITS,
+            self.stored_significand(),
             self.significand()
         );
     }
 }
 
-macro_rules! impl_FloatDbg {
-    ($F:ty, $U:ty, $S:ty; $width:expr, $exp_width:expr, $frac_width:expr) => {
-        impl FloatDbg<$U, $S> for $F {
-            const WIDTH: usize = $width;
-            const EXP_WIDTH: usize = $exp_width;
-            const FRACT_WIDTH: usize = $frac_width;
+macro_rules! impl_Float {
+    ($F:ty, $Bits:ty, $BiasedExponent:ty, $Exponent:ty, $Significand:ty; $exp_bits:expr, $signif_bits:expr) => {
+        impl Float for $F {
+            type Bits = $Bits;
+            type BiasedExponent = $BiasedExponent;
+            type Exponent = $Exponent;
+            type Significand = $Significand;
 
-            const SIGN_MASK: $U = 1 << (Self::WIDTH - 1);
-            const EXP_MASK: $U = ((1 << Self::EXP_WIDTH) - 1) << Self::FRACT_WIDTH;
-            const FRACT_MASK: $U = (1 << Self::FRACT_WIDTH) - 1;
+            const BITS: NBits = Self::Bits::BITS as NBits;
+            const EXP_BITS: NBits = $exp_bits;
+            const SIGNIF_BITS: NBits = $signif_bits;
 
-            const EXP_BIAS: $S = (1 << (Self::EXP_WIDTH - 1)) - 1;
+            const SIGN_MASK: Self::Bits = 1 << (Self::EXP_BITS + Self::SIGNIF_BITS);
+            const EXP_MASK: Self::Bits = (1 << Self::EXP_BITS) - 1 << Self::SIGNIF_BITS;
+            const SIGNIF_MASK: Self::Bits = (1 << Self::SIGNIF_BITS) - 1;
 
-            fn to_bits(self) -> $U {
+            const EXP_BIAS: Self::Exponent = ((1 << Self::EXP_BITS - 1) - 1);
+
+            #[inline]
+            fn to_bits(self) -> Self::Bits {
                 self.to_bits()
             }
 
-            fn biased_exponent(self) -> $U {
-                (self.to_bits() & Self::EXP_MASK) >> Self::FRACT_WIDTH
+            #[inline]
+            fn from_bits(b: Self::Bits) -> Self {
+                Self::from_bits(b)
             }
 
-            fn unbiased_exponent(self) -> $S {
-                (self.biased_exponent() as $S).wrapping_sub(Self::EXP_BIAS)
+            #[inline]
+            fn biased_exponent(self) -> Self::BiasedExponent {
+                ((self.to_bits() & Self::EXP_MASK) >> Self::SIGNIF_BITS) as Self::BiasedExponent
             }
 
-            fn fraction(self) -> $U {
-                self.to_bits() & Self::FRACT_MASK
+            #[inline]
+            fn exponent(self) -> Self::Exponent {
+                (self.biased_exponent() as Self::Exponent).wrapping_sub(Self::EXP_BIAS)
             }
 
-            fn significand(self) -> $U {
-                self.fraction() + (1 << Self::FRACT_WIDTH)
+            #[inline]
+            fn stored_significand(self) -> Self::Significand {
+                self.to_bits() & Self::SIGNIF_MASK as Self::Significand
+            }
+
+            #[inline]
+            fn significand(self) -> Self::Significand {
+                // Fixme
+                self.stored_significand() + (1 << Self::SIGNIF_BITS)
             }
         }
     };
 }
 
-impl_FloatDbg!(f32, u32, i32; 32, 8, 23);
-impl_FloatDbg!(f64, u64, i64; 64, 11, 52);
+impl_Float!(f32, u32, u8, i16, u32; 8, 23);
+impl_Float!(f64, u64, u16, i16, u64; 11, 52);
 
 #[cfg(test)]
 mod tests {
