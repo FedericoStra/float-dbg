@@ -72,7 +72,7 @@ impl_AsBits!(f32, u32);
 impl_AsBits!(f64, u64);
 
 /// Types that represent a floating point number.
-pub trait Float: Copy + PartialEq + PartialOrd + AsBits
+pub trait FloatDbg: Copy + PartialEq + PartialOrd + AsBits
 where
     Self::Bits: az::Cast<Self::BiasedExponent>,
     Self::BiasedExponent: az::Cast<Self::Exponent>,
@@ -124,7 +124,7 @@ where
 
     /// The significand without the implicit bit, as it is stored in the bit representation.
     ///
-    /// Synonym of [`Float::fraction`].
+    /// Synonym of [`FloatDbg::fraction`].
     #[inline]
     fn stored_significand(self) -> Self::Significand {
         (self.to_bits() & Self::SIGNIF_MASK).az()
@@ -139,7 +139,7 @@ where
 
     /// The significand without the implicit bit, as it is stored in the bit representation.
     ///
-    /// Synonym of [`Float::stored_significand`].
+    /// Synonym of [`FloatDbg::stored_significand`].
     #[inline]
     fn fraction(self) -> Self::Significand {
         self.stored_significand()
@@ -166,7 +166,7 @@ where
     /// Nicely prints the components of a floating point number.
     ///
     /// ```
-    /// # use float_dbg::Float;
+    /// # use float_dbg::FloatDbg;
     /// 0.032_f32.explain();
     /// ```
     ///
@@ -216,7 +216,7 @@ where
 
 macro_rules! impl_Float {
     ($F:ty, $BiasedExponent:ty, $Exponent:ty, $Significand:ty; $exp_bits:expr, $signif_bits:expr) => {
-        impl Float for $F {
+        impl FloatDbg for $F {
             type BiasedExponent = $BiasedExponent;
             type Exponent = $Exponent;
             type Significand = $Significand;

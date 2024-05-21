@@ -18,6 +18,10 @@ Types of changes:
 <!-- next-header -->
 ## [Unreleased]
 
+### Changed
+
+- Renamed [`Float`](https://docs.rs/float-dbg/0.3.2/float_dbg/trait.Float.html) to [`FloatDbg`](https://docs.rs/float-dbg/0.4.0/float_dbg/trait.Float.html) to avoid conflict with [`num_traits::float::Float`](https://docs.rs/num-traits/latest/num_traits/float/trait.Float.html).
+
 ---
 
 **All history up to version 0.3.2 is not documented.**
