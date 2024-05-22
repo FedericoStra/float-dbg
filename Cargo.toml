@@ -1,15 +1,19 @@
 [package]
 name = "float-dbg"
 version = "0.4.0-alpha.1"
-edition = "2021"
 authors = ["Federico Stra <stra.federico@gmail.com>"]
 description = "Debug floating point numbers easily"
-license = "MIT"
+license = "MIT" # https://spdx.org/licenses/
 repository = "https://github.com/FedericoStra/float-dbg"
+categories = ["development-tools::debugging", "mathematics"] # https://crates.io/category_slugs
 keywords = ["debug", "floating-point", "numbers", "IEEE-754"]
-categories = ["development-tools::debugging", "mathematics"]
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 az = "1.2.0"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs", "--html-in-header", "katex-header.html"]
+all-features = true

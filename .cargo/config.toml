@@ -1,0 +1,3 @@
+[build]
+rustflags = ["-C", "target-cpu=native"]
+rustdocflags = ["--html-in-header", "katex-header.html"]
